@@ -15,5 +15,9 @@ type Mutation {
     addUser(name:String!):[User!]!
 }
 
+type Subscription  {
+    count:Int!
+}
+
 
 `

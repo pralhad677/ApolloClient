@@ -43,7 +43,22 @@ export const resolvers: IResolvers = {
                     lists.push(obj)
                     return lists
                 }
+    },
+    Subscription: {
+        count: {
+            
+            subscribe(_, _1, { pubsub }) {
+                let count = 0
+                setInterval(() => {
+                  ++count
+                  pubsub.publish('count', {
+                    count
+                  })
+                },1000)
+                return pubsub.asyncIterator('count')
             }
+        }
+    } 
 
         }
     
