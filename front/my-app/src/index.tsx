@@ -3,15 +3,59 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { ApolloClient, InMemoryCache,createHttpLink,from ,ApolloLink,HttpLink,concat  } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import {BrowserRouter as Router} from 'react-router-dom'
+import { BrowserRouter as Router } from 'react-router-dom'
+import { setContext } from '@apollo/client/link/context';
+import Cookies from 'universal-cookie'
 
-const client = new ApolloClient({
-  uri: 'http://localhost:3005/graphql',
-  cache: new InMemoryCache()
+const endPoint = 'http://localhost:3006/graphql'
+const cookies = new Cookies()
+
+
+
+
+
+const authLink = new ApolloLink((operation, forward) => {
+  // add the authorization to the headers
+  operation.setContext(({ headers = {} }) => ({
+    headers: {
+      ...headers,
+      // authorization:'Bearer' + cookies.get('jwt') ,
+    }
+  }))
+
+  return forward(operation);
+})
+
+
+const httpLink = createHttpLink({
+  uri: endPoint,
+  credentials: 'include'
 });
 
+const client = new ApolloClient({
+  // uri: 'http://localhost:3006/graphql',
+  
+  // link:  ApolloLink.from([ (link as unknown)  as ApolloLink,httpLink,uploadLink ]),
+  // link:  ApolloLink.from([ ( authLink  as unknown)  as ApolloLink,httpLink, ]),
+  // link:  ApolloLink.from([  authLink  ,httpLink, ]),
+  
+  link: authLink.concat(httpLink),
+  // link:authLink,
+   
+  // link: concat(authLink, httpLink),
+  // link:from([authLink,httpLink]),
+  
+  //link means how to connect to a server
+  // link:  ApolloLink.from([ authLink,new HttpLink({
+  //   uri:endPoint
+  // }) ]), 
+  
+  cache: new InMemoryCache(),
+  // credentials: "include",
+});
+  
 ReactDOM.render(
   <React.StrictMode>
     <Router>

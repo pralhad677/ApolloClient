@@ -1,10 +1,13 @@
 import React from 'react'
+
 import { useQuery, gql, useMutation } from '@apollo/client';
 import { Switch, Route,NavLink,useHistory,useLocation } from 'react-router-dom'
 import Context from './Context/Index'
 import {Context as Context1} from './Context/Index'
 import Protected from './component/private/index'
 import Login from './component/Login/Index'
+
+import Cookies from 'js-cookie';
 
 interface Props {
 
@@ -24,11 +27,16 @@ const ADD_TODO = gql`
   mutation AddUser($name: String!) {
     addUser(name: $name) {
       name
-      id
+      _id
      
     }
   }
 `;
+const Name = gql`
+query Name {
+  name
+}
+`
 
 
 // const mutation1 = gql`
@@ -42,14 +50,19 @@ const ADD_TODO = gql`
 
 let App: React.FC<Props> = () => {
   const [addUser] = useMutation(ADD_TODO);
+  const MyData = useQuery(Name)
+  // console.log('data',data)
+  // console.log('error',error)
   const { setAuth } = React.useContext(Context1)
   const history = useHistory()
   const {state} = useLocation()
   let data1 = React.useCallback(() => {
     let myfn = async () => {
+      
         let res = await addUser({ variables: { name: 'kali' } })
-        console.log('res',res)
-      }
+      console.log('res', res)
+      console.log(Cookies.get('username'))
+      } 
       myfn()
   },[addUser])
   
@@ -95,8 +108,19 @@ let App: React.FC<Props> = () => {
                   from:state
                 }
               })
-
-}}>Logout</button>
+ 
+            }}>Logout</button>
+            <button onClick={async () => {
+              // console.log('data',data)
+              try {
+                var { data, loading, error } = await MyData
+               error && alert(error.message)
+                console.log('res',error)
+              } catch(err){
+                console.log(err)
+              }
+              
+            }}>query</button>
 </div>
         </Protected>
         <Route path="/login">

@@ -1,6 +1,6 @@
 import { model, Schema, Model, Document } from 'mongoose';
 
-interface IUser extends Document {
+export interface IUser extends Document {
  name:String
 }
 const UserSchema: Schema = new Schema({
