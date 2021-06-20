@@ -1,135 +1,108 @@
 import React from 'react'
+import ErrorBoundary from './ErrorBoundary/Index'
+import CustomContext, { Context } from './Context/Index'
+import { gql, useQuery,useSubscription } from '@apollo/client'
+// import _ from 'lodash'
+import _ from 'lodash'
 
-import { useQuery, gql, useMutation } from '@apollo/client';
-import { Switch, Route,NavLink,useHistory,useLocation } from 'react-router-dom'
-import Context from './Context/Index'
-import {Context as Context1} from './Context/Index'
-import Protected from './component/private/index'
-import Login from './component/Login/Index'
 
-import Cookies from 'js-cookie';
+ 
 
-interface Props {
+
+interface Props{  
 
 }
 
-// const mutation = `
-// mutation AddUser($name:String!){
-//   addUser(name:$name){
-//     name,
-//     id
-//   }
-// }`
-
-
-
-const ADD_TODO = gql`
-  mutation AddUser($name: String!) {
-    addUser(name: $name) {
-      name
-      _id
-     
-    }
+const Query_User = gql`
+query users{
+  users {
+    name
   }
-`;
-const Name = gql`
-query Name {
-  name
 }
 `
+interface User {
+  name: string;
+}
+interface UserList {
+  latestUser: User[];
+}
 
-
-// const mutation1 = gql`
-//   mutation AddUser($name:String!){
-//   addUser(name:$name){
-//     name,
-//     id
-  // }
-// `
-  
-
+const SubScription_User = gql`
+subscription  users{
+  users {
+    name
+  }
+}
+`
+interface user {
+  name: string,
+  __typename?:string
+}
+interface userdata {
+  users: user[];
+}
 let App: React.FC<Props> = () => {
-  const [addUser] = useMutation(ADD_TODO);
-  const MyData = useQuery(Name)
-  // console.log('data',data)
-  // console.log('error',error)
-  const { setAuth } = React.useContext(Context1)
-  const history = useHistory()
-  const {state} = useLocation()
-  let data1 = React.useCallback(() => {
-    let myfn = async () => {
-      
-        let res = await addUser({ variables: { name: 'kali' } })
-      console.log('res', res)
-      console.log(Cookies.get('username'))
-      } 
-      myfn()
-  },[addUser])
+  const { state, dispatch } = React.useContext(Context)
+  // const { data, error, loading } = useQuery<userdata>(Query_User)
   
-  React.useEffect(() => {
-    // 
-    data1()
-  },[data1])
+  // console.log('data', data?.users)  
+  // console.log('state.data', data?.users.concat(state.data))
+  // let newData = data?.users.concat(state.data)
+  // console.log('filterData',filterData)
+   
+  const { loading, data } = useSubscription(SubScription_User);
+
+  console.log('data of subscription,', data) 
+  console.log(state.data[0]) 
+      React.useEffect(() => {
+        const control = new AbortController()
+        // dispatch({ type: 'Add', data: { data: [{ name: 'ryan' }] } })
+        // if (data?.users !== undefined) {
+        //   dispatch({ type: 'Add', data: { data: data?.users } })
+        // }
+        return () => {
+          control.abort() 
+        } 
+      },[dispatch,data])
+  // if (state.isLoading ||loading) {
+  //   setTimeout(() => {
+  //     dispatch({
+  //       type: 'Waiting', data: {
+  //         isLoading: false,
+  //         error:false
+  //       }})
+  //   },1000)
+  //   return <h1>Loading</h1>
+  // }
+  // if (state.error || error) {
+  //   throw new Error('Error occurs :App.tsx')
+  // }
   
   return (
-    <Context>
-      <ul>
-        <li>
-          <NavLink to="/">Home</NavLink>
-        </li>
-        <li>
-          <NavLink to="/login">Login</NavLink>
-        </li>
-        <li>
-          <NavLink to="/protected">Protected</NavLink>
-        </li>
-      </ul>
-      
-    <Switch>
-        <Route exact path="/">
-          <div>
-
-          
-          <h1>Home</h1>
-         
-          </div>
-        </Route>
-        <Protected path="/protected">
-        <div>
-
-          
-
-          <h1>protected</h1>
-            <button onClick={() => {
-              setAuth(false)
-              history.push({
-                pathname: '/login',
-                state: {
-                  from:state
-                }
-              })
- 
-            }}>Logout</button>
-            <button onClick={async () => {
-              // console.log('data',data)
-              try {
-                var { data, loading, error } = await MyData
-               error && alert(error.message)
-                console.log('res',error)
-              } catch(err){
-                console.log(err)
-              }
-              
-            }}>query</button>
-</div>
-        </Protected>
-        <Route path="/login">
-          <Login />
-        </Route>
-      <Route path="*"><h1>page not found</h1></Route>
-  </Switch>
-    </Context>
+    <div>
+      <h1>React JS By Facebook</h1>
+      {
+        state.data.map((item, index) => {
+       
+          return <ul key={index}>
+            <li>{item.name}</li>
+          </ul>
+        }) 
+      }
+    </div>
   )
 }
 
-export default App
+export default function appWithErrorBoundary(props:Props){
+  return (
+    <ErrorBoundary >
+      <CustomContext>
+
+        <App {...props}/>
+      </CustomContext>
+    </ErrorBoundary>
+  
+  )
+}
+
+// export default App

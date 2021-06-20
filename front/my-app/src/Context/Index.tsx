@@ -1,29 +1,23 @@
 import React from 'react'
+import Redux,{StateType,Action} from '../Redux/Index'
 
-interface contextType {
-  auth: boolean,
-  setAuth: React.Dispatch<React.SetStateAction<boolean>>
+interface InitContextProps {
+  state: StateType;
+  dispatch: React.Dispatch<Action>;
+}
+interface Props {
+
 }
 
-export const Context = React.createContext<contextType>({
-  auth: false,
-  setAuth:()=>{}
-} as contextType)
+export const Context = React.createContext(({} as InitContextProps))
 
- interface Props {
-
-}
-let Index:React.FC<Props>=({children})=> {
-  const [auth, setAuth] = React.useState<boolean>(false)
-  let data = React.useMemo(() => {
-    return {
-      auth,
-      setAuth
-      }
-  },[auth,setAuth])
+let Index: React.FC<Props> = ({ children }) => {
+  const {state,dispatch} = Redux()
+  
+  
   return (
-    <Context.Provider value={data}>
-      {children}
+    <Context.Provider value={{ state,dispatch }} >
+        {children}
     </Context.Provider>
   )
 }

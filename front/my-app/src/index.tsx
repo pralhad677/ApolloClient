@@ -3,18 +3,24 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { ApolloClient, InMemoryCache,createHttpLink,from ,ApolloLink,HttpLink,concat  } from '@apollo/client';
+import { ApolloClient, InMemoryCache,createHttpLink,from ,ApolloLink,HttpLink,concat,NormalizedCacheObject,split  } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { BrowserRouter as Router } from 'react-router-dom'
-import { setContext } from '@apollo/client/link/context';
 import Cookies from 'universal-cookie'
+import { WebSocketLink } from '@apollo/client/link/ws';
 
-const endPoint = 'http://localhost:3006/graphql'
+import { getMainDefinition } from '@apollo/client/utilities';
+
+const wsLink = new WebSocketLink({
+  uri: 'ws://localhost:3007/graphql',
+  options: {
+    reconnect: true
+  }
+});
+
+
+const endPoint = 'http://localhost:3007/graphql'
 const cookies = new Cookies()
-
-
-
-
 
 const authLink = new ApolloLink((operation, forward) => {
   // add the authorization to the headers
@@ -24,8 +30,7 @@ const authLink = new ApolloLink((operation, forward) => {
       // authorization:'Bearer' + cookies.get('jwt') ,
     }
   }))
-
-  return forward(operation);
+return forward(operation);
 })
 
 
@@ -34,26 +39,22 @@ const httpLink = createHttpLink({
   credentials: 'include'
 });
 
-const client = new ApolloClient({
-  // uri: 'http://localhost:3006/graphql',
-  
-  // link:  ApolloLink.from([ (link as unknown)  as ApolloLink,httpLink,uploadLink ]),
-  // link:  ApolloLink.from([ ( authLink  as unknown)  as ApolloLink,httpLink, ]),
-  // link:  ApolloLink.from([  authLink  ,httpLink, ]),
-  
-  link: authLink.concat(httpLink),
-  // link:authLink,
-   
-  // link: concat(authLink, httpLink),
-  // link:from([authLink,httpLink]),
-  
-  //link means how to connect to a server
-  // link:  ApolloLink.from([ authLink,new HttpLink({
-  //   uri:endPoint
-  // }) ]), 
-  
-  cache: new InMemoryCache(),
-  // credentials: "include",
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === 'OperationDefinition' &&
+      definition.operation === 'subscription'
+    );
+  },
+  wsLink,
+  httpLink,
+);
+
+const client: ApolloClient<NormalizedCacheObject> = new ApolloClient({
+  // link: authLink.concat(httpLink),
+  link: authLink.concat(splitLink),
+   cache: new InMemoryCache(),
 });
   
 ReactDOM.render(
